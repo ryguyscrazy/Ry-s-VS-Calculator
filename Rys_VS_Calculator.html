@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ry's VS Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121820;
+            --panel-bg: #1c2532;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-top: 0;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .day-selector {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .day-selector::-webkit-scrollbar {
+            display: none; 
+        }
+        .day-btn {
+            flex: 1 0 auto;
+            min-width: 75px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .day-btn:active {
+            transform: scale(0.95);
+        }
+        .day-btn.active {
+            background-color: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        .calc-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .calc-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            background: #253040;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .input-group label {
+            font-size: 0.95rem;
+            flex: 1;
+            line-height: 1.3;
+        }
+        .input-group .symbol {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-left: 4px;
+            font-family: monospace;
+        }
+        .input-group input {
+            width: 100px;
+            background: #111827;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 1.1rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        .total-box {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #1e3a8a, #7f1d1d);
+            padding: 20px 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #4b5563;
+            position: sticky;
+            bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        .total-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #d1d5db;
+        }
+        .total-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+            color: white;
+            word-break: break-word;
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 480px) {
+            .input-group {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 15px;
+            }
+            .input-group input {
+                width: 100%;
+                margin-top: 10px;
+                box-sizing: border-box;
+            }
+            .day-btn {
+                min-width: 65px;
+                font-size: 0.85rem;
+            }
+            .total-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Ry's VS Calculator</h1>
+    
+    <div class="day-selector">
+        <button class="day-btn active" onclick="setDay(1)">Day 1<br><small>Radar</small></button>
+        <button class="day-btn" onclick="setDay(2)">Day 2<br><small>Build</small></button>
+        <button class="day-btn" onclick="setDay(3)">Day 3<br><small>Research</small></button>
+        <button class="day-btn" onclick="setDay(4)">Day 4<br><small>Hero</small></button>
+        <button class="day-btn" onclick="setDay(5)">Day 5<br><small>Train</small></button>
+        <button class="day-btn" onclick="setDay(6)">Day 6<br><small>Buster</small></button>
+    </div>
+
+    <!-- DAY 1 -->
+    <div id="day-1" class="calc-section active">
+        <div class="input-group"><label>Stamina <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-s" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-t" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Hero EXP Used <span class="symbol">(X)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-X" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Drone Battle Data <span class="symbol">(d)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-d" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Drone Parts <span class="symbol">(P)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-P" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Food Used <span class="symbol">(f)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-f" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Iron Used <span class="symbol">(i)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-i" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Gold Used <span class="symbol">(g)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-g" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+        <div class="input-group"><label>Chip Chests <span class="symbol">(C)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d1-C" min="0" oninput="calcD1()" onchange="calcD1()" onkeyup="calcD1()"></div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div id="day-2" class="calc-section">
+        <div class="input-group"><label>Const. Speed-ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d2-s" min="0" oninput="calcD2()" onchange="calcD2()" onkeyup="calcD2()"></div>
+        <div class="input-group"><label>Building Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d2-p" min="0" oninput="calcD2()" onchange="calcD2()" onkeyup="calcD2()"></div>
+        <div class="input-group"><label>UR Trade Trucks <span class="symbol">(T)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d2-T" min="0" oninput="calcD2()" onchange="calcD2()" onkeyup="calcD2()"></div>
+        <div class="input-group"><label>UR Secret Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d2-t" min="0" oninput="calcD2()" onchange="calcD2()" onkeyup="calcD2()"></div>
+        <div class="input-group"><label>Survivor Recruitments <span class="symbol">(S)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d2-S" min="0" oninput="calcD2()" onchange="calcD2()" onkeyup="calcD2()"></div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div id="day-3" class="calc-section">
+        <div class="input-group"><label>Research Speed-ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-s" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Research Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-p" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Valor Badges <span class="symbol">(v)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-v" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-t" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.1 Drone Chests <span class="symbol">(c1)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c1" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.2 Drone Chests <span class="symbol">(c2)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c2" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.3 Drone Chests <span class="symbol">(c3)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c3" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.4 Drone Chests <span class="symbol">(c4)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c4" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.5 Drone Chests <span class="symbol">(c5)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c5" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.6 Drone Chests <span class="symbol">(c6)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c6" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+        <div class="input-group"><label>Lv.7 Drone Chests <span class="symbol">(c7)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d3-c7" min="0" oninput="calcD3()" onchange="calcD3()" onkeyup="calcD3()"></div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div id="day-4" class="calc-section">
+        <div class="input-group"><label>Hero Recruitments <span class="symbol">(H)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-H" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+        <div class="input-group"><label>Hero EXP Used <span class="symbol">(X)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-X" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+        <div class="input-group"><label>UR Shards <span class="symbol">(U)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-U" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+        <div class="input-group"><label>SSR Shards <span class="symbol">(S)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-S" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+        <div class="input-group"><label>SR Shards <span class="symbol">(R)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-R" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+        <div class="input-group"><label>Skill Medals <span class="symbol">(m)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d4-m" min="0" oninput="calcD4()" onchange="calcD4()" onkeyup="calcD4()"></div>
+    </div>
+
+    <!-- DAY 5 -->
+    <div id="day-5" class="calc-section">
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d5-t" min="0" oninput="calcD5()" onchange="calcD5()" onkeyup="calcD5()"></div>
+        <div class="input-group"><label>Speed Ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d5-s" min="0" oninput="calcD5()" onchange="calcD5()" onkeyup="calcD5()"></div>
+        <div class="input-group"><label>Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d5-p" min="0" oninput="calcD5()" onchange="calcD5()" onkeyup="calcD5()"></div>
+        <div class="input-group"><label>Troops Trained (Batch Size) <span class="symbol">(N)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d5-N" min="0" oninput="calcD5()" onchange="calcD5()" onkeyup="calcD5()"></div>
+        <div class="input-group"><label>Troop Level <span class="symbol">(L)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d5-L" min="1" max="10" oninput="calcD5()" onchange="calcD5()" onkeyup="calcD5()"></div>
+    </div>
+
+    <!-- DAY 6 -->
+    <div id="day-6" class="calc-section">
+        <div class="input-group"><label>UR Trade Trucks <span class="symbol">(T)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-T" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <div class="input-group"><label>UR Secret Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-t" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <div class="input-group"><label>Speed Ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-s" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <br>
+        <div style="font-size:0.85rem; color:var(--accent-red); margin-bottom: 5px; text-transform:uppercase; font-weight:bold;">Combat Input (Same Level Batch)</div>
+        <div class="input-group"><label>Unit Level <span class="symbol">(L)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-L" min="1" max="10" value="1" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <div class="input-group"><label>Rival Units Killed <span class="symbol">(RK)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-RK" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <div class="input-group"><label>Standard Units Killed <span class="symbol">(K)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-K" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+        <div class="input-group"><label>Units Lost <span class="symbol">(D)</span></label><input type="number" inputmode="numeric" pattern="[0-9]*" id="d6-D" min="0" oninput="calcD6()" onchange="calcD6()" onkeyup="calcD6()"></div>
+    </div>
+
+    <div class="total-box">
+        <div class="total-label">Total VS Points Earned</div>
+        <div class="total-value" id="grand-total">0</div>
+    </div>
+</div>
+
+<script>
+    let currentDay = 1;
+
+    function val(id) {
+        let rawVal = document.getElementById(id).value.replace(/,/g, '');
+        return Number(rawVal) || 0;
+    }
+
+    function formatNumber(num) {
+        return num.toLocaleString('en-US');
+    }
+
+    function setDay(day) {
+        currentDay = day;
+        document.querySelectorAll('.calc-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.day-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById('day-' + day).classList.add('active');
+        document.querySelectorAll('.day-btn')[day - 1].classList.add('active');
+        
+        updateTotal(0);
+        
+        if (typeof window['calcD' + day] === 'function') {
+            window['calcD' + day]();
+        }
+    }
+
+    function updateTotal(amount) {
+        document.getElementById('grand-total').innerText = formatNumber(Math.floor(amount));
+    }
+
+    function calcD1() {
+        // Updated Stamina multiplier to 300 points per unit used
+        let total = (300 * val('d1-s')) + 
+                    (25000 * val('d1-t')) + 
+                    (Math.floor(val('d1-X') / 660) * 2) + 
+                    (6 * val('d1-d')) + 
+                    (5000 * val('d1-P')) + 
+                    (Math.floor(val('d1-f') / 100) * 40) + 
+                    (Math.floor(val('d1-i') / 100) * 40) + 
+                    (Math.floor(val('d1-g') / 60) * 40) + 
+                    (2250 * val('d1-C'));
+        updateTotal(total);
+    }
+
+    function calcD2() {
+        let total = (125 * val('d2-s')) + 
+                    (25 * val('d2-p')) + 
+                    (200000 * val('d2-T')) + 
+                    (150000 * val('d2-t')) + 
+                    (3000 * val('d2-S'));
+        updateTotal(total);
+    }
+
+    function calcD3() {
+        let total = (125 * val('d3-s')) + 
+                    (25 * val('d3-p')) + 
+                    (600 * val('d3-v')) + 
+                    (25000 * val('d3-t')) + 
+                    (2200 * val('d3-c1')) + 
+                    (6600 * val('d3-c2')) + 
+                    (20000 * val('d3-c3')) + 
+                    (60000 * val('d3-c4')) + 
+                    (180000 * val('d3-c5')) + 
+                    (540000 * val('d3-c6')) + 
+                    (1620000 * val('d3-c7'));
+        updateTotal(total);
+    }
+
+    function calcD4() {
+        let total = (3750 * val('d4-H')) + 
+                    (Math.floor(val('d4-X') / 100) * 2) + 
+                    (20000 * val('d4-U')) + 
+                    (7000 * val('d4-S')) + 
+                    (2000 * val('d4-R')) + 
+                    (20 * val('d4-m'));
+        updateTotal(total);
+    }
+
+    function calcD5() {
+        let L = val('d5-L') > 0 ? val('d5-L') : 1;
+        let total = (25000 * val('d5-t')) + 
+                    (125 * val('d5-s')) + 
+                    (25 * val('d5-p')) + 
+                    (25 * val('d5-N') * (L + 1));
+        updateTotal(total);
+    }
+
+    function calcD6() {
+        let L = val('d6-L') > 0 ? val('d6-L') : 1;
+        let total = (200000 * val('d6-T')) + 
+                    (150000 * val('d6-t')) + 
+                    (125 * val('d6-s')) + 
+                    (12.5 * val('d6-RK') * (L + 1)) + 
+                    (2.5 * val('d6-K') * (L + 1)) + 
+                    (2 * val('d6-D') * (L + 1));
+        updateTotal(total);
+    }
+</script>
+</body>
+</html>
