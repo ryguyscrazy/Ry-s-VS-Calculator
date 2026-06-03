@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ry's VS Calculator</title>
+    <!-- We added Chart.js here to power the multi-graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #121820;
+            --panel-bg: #1c2532;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f97316;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            margin-bottom: 120px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-top: 0;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .day-selector {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .day-selector::-webkit-scrollbar { display: none; }
+        .day-btn {
+            flex: 1 0 auto;
+            min-width: 75px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .day-btn:active { transform: scale(0.95); }
+        .day-btn.active {
+            background-color: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        .converter-card {
+            background: #232d3d;
+            border: 1px dashed var(--accent-purple);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .converter-header {
+            background: #1e2736;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #c084fc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .converter-body { padding: 15px; display: none; }
+        .converter-body.open { display: block; }
+        .converter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .conv-input-group {
+            background: #171e28;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .conv-input-group label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .conv-input-group input {
+            width: 100%;
+            background: #0b0f14;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .converter-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .goal-card {
+            background: #1e293b;
+            border: 1px solid var(--accent-orange);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .goal-card-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--accent-orange);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .goal-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .goal-input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .goal-input-box label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .goal-input-box input {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .calc-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .calc-section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            background: #253040;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .input-group label { font-size: 0.95rem; flex: 1; line-height: 1.3; }
+        .input-group .symbol { color: var(--text-muted); font-size: 0.8rem; margin-left: 4px; font-family: monospace; }
+        .input-group input {
+            width: 100px;
+            background: #111827;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 1.1rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .input-group input:focus { outline: none; border-color: var(--accent-blue); }
+        
+        .history-section { margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px; }
+        .history-title { font-size: 1.1rem; color: var(--text-main); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* New Chart Container Styles */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            margin-bottom: 20px;
+            background: #1a222d;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: none; /* Hidden until data exists */
+        }
+        .chart-container.visible { display: block; }
+
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item { background: #1a222d; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
+        .history-date { color: var(--text-muted); font-size: 0.85rem; }
+        .history-score { font-weight: bold; color: var(--accent-green); }
+        .history-goal { font-size: 0.8rem; color: var(--accent-orange); }
+        
+        .btn {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-purple { background-color: var(--accent-purple); }
+        .btn-danger { background-color: var(--accent-red); padding: 5px 10px; font-size: 0.8rem; }
+
+        .total-box {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 650px;
+            background: linear-gradient(135deg, #16222f, #0d131a);
+            padding: 12px 20px;
+            border-top: 2px solid #3b82f6;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.7);
+            display: grid;
+            grid-template-columns: 1.2fr 1.2fr 0.8fr;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 1000;
+            gap: 10px;
+        }
+        .score-split { text-align: left; }
+        .total-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+        .total-value { font-size: 1.15rem; font-weight: bold; color: white; margin-bottom: 2px; }
+        .weekly-highlight .total-value { color: var(--accent-green); font-size: 1.35rem; }
+        
+        .goal-delta {
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: block;
+        }
+        .status-neutral { color: var(--text-muted); }
+        .status-miss { color: var(--accent-red); }
+        .status-hit { color: var(--accent-green); }
+
+        .autosave-indicator {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .input-group { flex-direction: column; align-items: flex-start; padding: 12px 15px; }
+            .input-group input { width: 100%; margin-top: 10px; box-sizing: border-box; }
+            .day-btn { min-width: 65px; font-size: 0.85rem; }
+            .converter-grid { grid-template-columns: repeat(2, 1fr); }
+            .total-box { grid-template-columns: 1fr; padding: 12px 15px; }
+            .total-box button { width: 100%; }
+            .score-split { display: flex; justify-content: space-between; align-items: center; }
+            .goal-delta { display: inline-block; margin-left: 5px; }
+            .weekly-highlight .total-value { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Ry's VS Calculator</h1>
+    
+    <div class="day-selector">
+        <button class="day-btn active" onclick="setDay(1)">Day 1<br><small>Radar</small></button>
+        <button class="day-btn" onclick="setDay(2)">Day 2<br><small>Build</small></button>
+        <button class="day-btn" onclick="setDay(3)">Day 3<br><small>Research</small></button>
+        <button class="day-btn" onclick="setDay(4)">Day 4<br><small>Hero</small></button>
+        <button class="day-btn" onclick="setDay(5)">Day 5<br><small>Train</small></button>
+        <button class="day-btn" onclick="setDay(6)">Day 6<br><small>Buster</small></button>
+    </div>
+
+    <!-- ARMS RACE SYNC (DOUBLE DIP) -->
+    <div class="converter-card" style="border-color: var(--accent-green);">
+        <div class="converter-header" onclick="toggleArmsRace()" style="color: var(--accent-green);">
+            <span>⏱️ Arms Race Sync (Double Dip)</span>
+            <span id="ar-arrow-indicator">▼</span>
+        </div>
+        <div class="converter-body" id="ar-drawer">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                Align your upgrades with the perfect 4-hour Arms Race window to double your points.
+            </div>
+            
+            <div class="goal-grid">
+                <div class="goal-input-box">
+                    <label>Enable Sync?</label>
+                    <label style="display: flex; align-items: center; gap: 8px; color: white; font-size: 1rem; cursor: pointer;">
+                        <input type="checkbox" id="ar-toggle" onchange="calculateDoubleDip()" style="width: 20px; height: 20px;">
+                        <span id="ar-status-text">Off</span>
+                    </label>
+                </div>
+                <div class="goal-input-box">
+                    <label>Your Local Reset Time</label>
+                    <input type="time" id="local-reset-time" value="17:00" onchange="calculateDoubleDip()">
+                </div>
+            </div>
+
+            <div id="ar-results-box" style="display: none; margin-top: 15px; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 5px;">Optimal Window(s) Today:</div>
+                <div id="ar-time-windows" style="font-size: 1.1rem; font-weight: bold; color: white;">--</div>
+                <div id="ar-target-event" style="font-size: 0.85rem; color: var(--accent-orange); margin-top: 5px;">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAMPAIGN TARGET THRESHOLDS PANEL -->
+    <div class="goal-card">
+        <div class="goal-card-title">🎯 Campaign Goals & Actuals</div>
+        <div class="goal-grid">
+            <div class="goal-input-box">
+                <label id="active-day-goal-label">Day 1 Goal Points</label>
+                <input type="number" inputmode="numeric" id="target-day" value="0" oninput="runAllCalculations()">
+            </div>
+            <div class="goal-input-box">
+                <label id="active-day-actual-label" style="color: var(--accent-green); font-weight: bold;">✅ Day 1 Actual Score Scored</label>
+                <input type="number" inputmode="numeric" id="actual-day" value="0" oninput="runAllCalculations()">
+            </div>
+            <div class="goal-input-box">
+                <label>Weekly Milestone Goal</label>
+                <input type="number" inputmode="numeric" id="target-week" value="0" oninput="runAllCalculations()">
+            </div>
+        </div>
+    </div>
+
+    <!-- INVENTORY SPEEDUP CONVERTER -->
+    <div class="converter-card">
+        <div class="converter-header" onclick="toggleConverter()">
+            <span>🎒 Inventory Speedup Converter</span>
+            <span id="arrow-indicator">▼</span>
+        </div>
+        <div class="converter-body" id="converter-drawer">
+            <div class="converter-grid">
+                <div class="conv-input-group"><label>1 Min</label><input type="number" inputmode="numeric" id="sp-1m" value="0" oninput="runSpeedupConversion()"></div>
+                <div class="conv-input-group"><label>5 Min</label><input type="number" inputmode="numeric" id="sp-5m" value="0" oninput="runSpeedupConversion()"></div>
+                <div class="conv-input-group"><label>15 Min</label><input type="number" inputmode="numeric" id="sp-15m" value="0" oninput="runSpeedupConversion()"></div>
+                <div class="conv-input-group"><label>1 Hour</label><input type="number" inputmode="numeric" id="sp-1h" value="0" oninput="runSpeedupConversion()"></div>
+                <div class="conv-input-group"><label>3 Hour</label><input type="number" inputmode="numeric" id="sp-3h" value="0" oninput="runSpeedupConversion()"></div>
+                <div class="conv-input-group"><label>8 Hour</label><input type="number" inputmode="numeric" id="sp-8h" value="0" oninput="runSpeedupConversion()"></div>
+            </div>
+            <div class="converter-footer">
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-muted); display:block; text-transform:uppercase;">Calculated Output</span>
+                    <span style="font-size:1.2rem; font-weight:bold; color:white;"><span id="conv-total-display">0</span> mins</span>
+                </div>
+                <button class="btn btn-purple" onclick="applyMinutesToActiveDay()">Apply to Current Day</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAY 1 -->
+    <div id="day-1" class="calc-section active">
+        <div class="input-group"><label>Stamina <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" id="d1-s" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" id="d1-t" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Hero EXP Used <span class="symbol">(X)</span></label><input type="number" inputmode="numeric" id="d1-X" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Drone Battle Data <span class="symbol">(d)</span></label><input type="number" inputmode="numeric" id="d1-d" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Drone Parts <span class="symbol">(P)</span></label><input type="number" inputmode="numeric" id="d1-P" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Food Used <span class="symbol">(f)</span></label><input type="number" inputmode="numeric" id="d1-f" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Iron Used <span class="symbol">(i)</span></label><input type="number" inputmode="numeric" id="d1-i" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Gold Used <span class="symbol">(g)</span></label><input type="number" inputmode="numeric" id="d1-g" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Chip Chests <span class="symbol">(C)</span></label><input type="number" inputmode="numeric" id="d1-C" min="0" oninput="runAllCalculations()"></div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div id="day-2" class="calc-section">
+        <div class="input-group"><label>Const. Speed-ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" id="d2-s" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Building Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" id="d2-p" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>UR Trade Trucks <span class="symbol">(T)</span></label><input type="number" inputmode="numeric" id="d2-T" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>UR Secret Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" id="d2-t" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Survivor Recruitments <span class="symbol">(S)</span></label><input type="number" inputmode="numeric" id="d2-S" min="0" oninput="runAllCalculations()"></div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div id="day-3" class="calc-section">
+        <div class="input-group"><label>Research Speed-ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" id="d3-s" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Research Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" id="d3-p" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Valor Badges <span class="symbol">(v)</span></label><input type="number" inputmode="numeric" id="d3-v" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" id="d3-t" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.1 Drone Chests <span class="symbol">(c1)</span></label><input type="number" inputmode="numeric" id="d3-c1" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.2 Drone Chests <span class="symbol">(c2)</span></label><input type="number" inputmode="numeric" id="d3-c2" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.3 Drone Chests <span class="symbol">(c3)</span></label><input type="number" inputmode="numeric" id="d3-c3" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.4 Drone Chests <span class="symbol">(c4)</span></label><input type="number" inputmode="numeric" id="d3-c4" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.5 Drone Chests <span class="symbol">(c5)</span></label><input type="number" inputmode="numeric" id="d3-c5" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.6 Drone Chests <span class="symbol">(c6)</span></label><input type="number" inputmode="numeric" id="d3-c6" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Lv.7 Drone Chests <span class="symbol">(c7)</span></label><input type="number" inputmode="numeric" id="d3-c7" min="0" oninput="runAllCalculations()"></div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div id="day-4" class="calc-section">
+        <div class="input-group"><label>Hero Recruitments <span class="symbol">(H)</span></label><input type="number" inputmode="numeric" id="d4-H" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Hero EXP Used <span class="symbol">(X)</span></label><input type="number" inputmode="numeric" id="d4-X" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>UR Shards <span class="symbol">(U)</span></label><input type="number" inputmode="numeric" id="d4-U" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>SSR Shards <span class="symbol">(S)</span></label><input type="number" inputmode="numeric" id="d4-S" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>SR Shards <span class="symbol">(R)</span></label><input type="number" inputmode="numeric" id="d4-R" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Skill Medals <span class="symbol">(m)</span></label><input type="number" inputmode="numeric" id="d4-m" min="0" oninput="runAllCalculations()"></div>
+    </div>
+
+    <!-- DAY 5 -->
+    <div id="day-5" class="calc-section">
+        <div class="input-group"><label>Radar Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" id="d5-t" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Speed Ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" id="d5-s" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Power Gained <span class="symbol">(p)</span></label><input type="number" inputmode="numeric" id="d5-p" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Troops Trained (Batch Size) <span class="symbol">(N)</span></label><input type="number" inputmode="numeric" id="d5-N" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Troop Level <span class="symbol">(L)</span></label><input type="number" inputmode="numeric" id="d5-L" min="1" max="10" oninput="runAllCalculations()"></div>
+    </div>
+
+    <!-- DAY 6 -->
+    <div id="day-6" class="calc-section">
+        <div class="input-group"><label>UR Trade Trucks <span class="symbol">(T)</span></label><input type="number" inputmode="numeric" id="d6-T" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>UR Secret Tasks <span class="symbol">(t)</span></label><input type="number" inputmode="numeric" id="d6-t" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Speed Ups (min) <span class="symbol">(s)</span></label><input type="number" inputmode="numeric" id="d6-s" min="0" oninput="runAllCalculations()"></div>
+        <br>
+        <div style="font-size:0.85rem; color:var(--accent-red); margin-bottom: 5px; text-transform:uppercase; font-weight:bold;">Combat Input (Same Level Batch)</div>
+        <div class="input-group"><label>Unit Level <span class="symbol">(L)</span></label><input type="number" inputmode="numeric" id="d6-L" min="1" max="10" value="1" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Rival Units Killed <span class="symbol">(RK)</span></label><input type="number" inputmode="numeric" id="d6-RK" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Standard Units Killed <span class="symbol">(K)</span></label><input type="number" inputmode="numeric" id="d6-K" min="0" oninput="runAllCalculations()"></div>
+        <div class="input-group"><label>Units Lost <span class="symbol">(D)</span></label><input type="number" inputmode="numeric" id="d6-D" min="0" oninput="runAllCalculations()"></div>
+    </div>
+
+    <div class="autosave-indicator">✓ Auto-saving all inputs securely to your browser</div>
+
+    <!-- UPDATED HISTORY SECTION WITH GRAPH -->
+    <div class="history-section">
+        <div class="history-title">
+            <span>📊 Weekly Performance Graph</span>
+            <button class="btn btn-danger" onclick="clearHistory()">Clear History</button>
+        </div>
+        
+        <div class="chart-container" id="chart-wrapper">
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <div class="history-list" id="history-container"></div>
+    </div>
+</div>
+
+<!-- STICKY BOTTOM TRACKER -->
+<div class="total-box">
+    <div class="score-split">
+        <div class="total-label" id="day-label">Day 1 Calc Total</div>
+        <div class="total-value" id="day-total">0</div>
+        <span class="goal-delta status-neutral" id="day-delta-display">No target set</span>
+    </div>
+    <div class="score-split weekly-highlight" style="text-align: right;">
+        <div class="total-label">Weekly Total Score</div>
+        <div class="total-value" id="weekly-total">0</div>
+        <span class="goal-delta status-neutral" id="week-delta-display">No target set</span>
+    </div>
+    <div style="text-align: right;">
+        <button class="btn" onclick="saveCurrentWeek()">Save Week</button>
+    </div>
+</div>
+
+<script>
+    let currentDay = 1;
+    let scores = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    let targetDayScores = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    let actualDayScores = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    let calculatedMinutes = 0;
+    let vsChart = null; // Variable to hold our Chart.js instance
+
+    const arSchedule = {
+        1: ["Base Building", "Unit Progression", "Hero Advancement", "Tech Research", "Drone Boost", "Base Building"],
+        2: ["Unit Progression", "Tech Research", "Base Building", "Drone Boost", "Hero Advancement", "Base Building"],
+        3: ["Drone Boost", "Hero Advancement", "Tech Research", "Base Building", "Unit Progression", "Tech Research"],
+        4: ["Base Building", "Unit Progression", "Hero Advancement", "Tech Research", "Drone Boost", "Hero Advancement"],
+        5: ["Tech Research", "Drone Boost", "Unit Progression", "Hero Advancement", "Base Building", "Unit Progression"],
+        6: ["Unit Progression", "Tech Research", "Base Building", "Drone Boost", "Hero Advancement", "Base Building"]
+    };
+
+    const vsMatches = {
+        1: ["Drone Boost"],
+        2: ["Base Building"],
+        3: ["Tech Research"],
+        4: ["Hero Advancement"],
+        5: ["Unit Progression"],
+        6: ["Unit Progression", "Tech Research", "Base Building"] 
+    };
+
+    function val(id) {
+        let el = document.getElementById(id);
+        if(!el) return 0;
+        return Number(el.value.replace(/,/g, '')) || 0;
+    }
+
+    function formatNumber(num) { return num.toLocaleString('en-US'); }
+
+    function saveState() {
+        let state = {};
+        document.querySelectorAll('input').forEach(input => {
+            if (input.type === 'checkbox') {
+                state[input.id] = input.checked;
+            } else {
+                state[input.id] = input.value;
+            }
+        });
+        state['actualDayScores'] = actualDayScores;
+        state['targetDayScores'] = targetDayScores;
+        localStorage.setItem('vs_calc_autosave', JSON.stringify(state));
+    }
+
+    function loadState() {
+        let saved = localStorage.getItem('vs_calc_autosave');
+        if (saved) {
+            let state = JSON.parse(saved);
+            if (state['actualDayScores']) actualDayScores = state['actualDayScores'];
+            if (state['targetDayScores']) targetDayScores = state['targetDayScores'];
+            
+            document.querySelectorAll('input').forEach(input => {
+                if (state[input.id] !== undefined) {
+                    if (input.type === 'checkbox') {
+                        input.checked = state[input.id];
+                    } else {
+                        input.value = state[input.id];
+                    }
+                }
+            });
+        }
+    }
+
+    function setDay(day) {
+        currentDay = day;
+        document.querySelectorAll('.calc-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.day-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById('day-' + day).classList.add('active');
+        document.querySelectorAll('.day-btn')[day - 1].classList.add('active');
+        
+        document.getElementById('day-label').innerText = "Day " + day + " Calc Total";
+        document.getElementById('active-day-goal-label').innerText = "Day " + day + " Goal Points";
+        document.getElementById('active-day-actual-label').innerHTML = "✅ Day " + day + " Actual Score";
+        
+        document.getElementById('target-day').value = targetDayScores[currentDay] || 0;
+        document.getElementById('actual-day').value = actualDayScores[currentDay] || 0;
+        
+        runAllCalculations();
+        calculateDoubleDip();
+    }
+
+    function toggleConverter() {
+        let drawer = document.getElementById('converter-drawer');
+        let arrow = document.getElementById('arrow-indicator');
+        drawer.classList.toggle('open');
+        arrow.innerText = drawer.classList.contains('open') ? "▲" : "▼";
+    }
+
+    function toggleArmsRace() {
+        let drawer = document.getElementById('ar-drawer');
+        let arrow = document.getElementById('ar-arrow-indicator');
+        drawer.classList.toggle('open');
+        arrow.innerText = drawer.classList.contains('open') ? "▲" : "▼";
+    }
+
+    function formatAMPM(date) {
+        let hours = date.getHours();
+        let minutes = date.getMinutes();
+        let ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return hours + ':' + (minutes < 10 ? '0'+minutes : minutes) + ' ' + ampm;
+    }
+
+    function calculateDoubleDip() {
+        const isEnabled = document.getElementById('ar-toggle').checked;
+        const statusText = document.getElementById('ar-status-text');
+        const resultsBox = document.getElementById('ar-results-box');
+        const resetTimeStr = document.getElementById('local-reset-time').value;
+
+        if (!isEnabled) {
+            statusText.innerText = "Off";
+            statusText.style.color = "white";
+            resultsBox.style.display = "none";
+        } else {
+            statusText.innerText = "Sync Active";
+            statusText.style.color = "var(--accent-green)";
+            resultsBox.style.display = "block";
+
+            if (resetTimeStr) {
+                let [resetHour, resetMinute] = resetTimeStr.split(':').map(Number);
+                let daySchedule = arSchedule[currentDay];
+                let targetEvents = vsMatches[currentDay];
+                let optimalWindows = [];
+
+                for (let i = 0; i < 6; i++) {
+                    if (targetEvents.includes(daySchedule[i])) {
+                        let startTime = new Date();
+                        startTime.setHours(resetHour + (i * 4), resetMinute, 0);
+                        let endTime = new Date(startTime);
+                        endTime.setHours(startTime.getHours() + 4);
+                        optimalWindows.push(`${formatAMPM(startTime)} - ${formatAMPM(endTime)}`);
+                    }
+                }
+                document.getElementById('ar-time-windows').innerHTML = optimalWindows.join('<br>');
+                document.getElementById('ar-target-event').innerText = `Target: ${targetEvents.join(' or ')}`;
+            }
+        }
+        saveState();
+    }
+
+    function runSpeedupConversion() {
+        let m1 = val('sp-1m');
+        let m5 = val('sp-5m') * 5;
+        let m15 = val('sp-15m') * 15;
+        let h1 = val('sp-1h') * 60;
+        let h3 = val('sp-3h') * 180;
+        let h8 = val('sp-8h') * 480;
+
+        calculatedMinutes = m1 + m5 + m15 + h1 + h3 + h8;
+        document.getElementById('conv-total-display').innerText = formatNumber(calculatedMinutes);
+        saveState(); 
+    }
+
+    function applyMinutesToActiveDay() {
+        let targetFields = { 2: 'd2-s', 3: 'd3-s', 5: 'd5-s', 6: 'd6-s' };
+        let fieldId = targetFields[currentDay];
+
+        if (!fieldId) {
+            alert(`Day ${currentDay} doesn't use speedups! Switch tabs first.`);
+            return;
+        }
+
+        document.getElementById(fieldId).value = calculatedMinutes;
+        document.querySelectorAll('.converter-grid input').forEach(i => i.value = 0);
+        document.getElementById('conv-total-display').innerText = "0";
+        calculatedMinutes = 0;
+        
+        runAllCalculations();
+        toggleConverter(); 
+    }
+
+    function runAllCalculations() {
+        scores[1] = (300 * val('d1-s')) + (25000 * val('d1-t')) + (Math.floor(val('d1-X') / 660) * 2) + (6 * val('d1-d')) + (5000 * val('d1-P')) + (Math.floor(val('d1-f') / 100) * 40) + (Math.floor(val('d1-i') / 100) * 40) + (Math.floor(val('d1-g') / 60) * 40) + (2250 * val('d1-C'));
+        scores[2] = (125 * val('d2-s')) + (25 * val('d2-p')) + (200000 * val('d2-T')) + (150000 * val('d2-t')) + (3000 * val('d2-S'));
+        scores[3] = (125 * val('d3-s')) + (25 * val('d3-p')) + (600 * val('d3-v')) + (25000 * val('d3-t')) + (2200 * val('d3-c1')) + (6600 * val('d3-c2')) + (20000 * val('d3-c3')) + (60000 * val('d3-c4')) + (180000 * val('d3-c5')) + (540000 * val('d3-c6')) + (1620000 * val('d3-c7'));
+        scores[4] = (3750 * val('d4-H')) + (Math.floor(val('d4-X') / 100) * 2) + (20000 * val('d4-U')) + (7000 * val('d4-S')) + (2000 * val('d4-R')) + (20 * val('d4-m'));
+        let d5L = val('d5-L') > 0 ? val('d5-L') : 1;
+        scores[5] = (25000 * val('d5-t')) + (125 * val('d5-s')) + (25 * val('d5-p')) + (25 * val('d5-N') * (d5L + 1));
+        let d6L = val('d6-L') > 0 ? val('d6-L') : 1;
+        scores[6] = (200000 * val('d6-T')) + (150000 * val('d6-t')) + (125 * val('d6-s')) + (12.5 * val('d6-RK') * (d6L + 1)) + (2.5 * val('d6-K') * (d6L + 1)) + (2 * val('d6-D') * (d6L + 1));
+
+        let currentDayScore = Math.floor(scores[currentDay]);
+        document.getElementById('day-total').innerText = formatNumber(currentDayScore);
+        
+        targetDayScores[currentDay] = val('target-day');
+        actualDayScores[currentDay] = val('actual-day');
+
+        let totalWeeklyAccumulation = 0;
+        for (let i = 1; i <= 6; i++) {
+            let dayCalc = Math.floor(scores[i]) || 0;
+            let dayActual = actualDayScores[i] || 0;
+            totalWeeklyAccumulation += (dayActual > 0) ? dayActual : dayCalc;
+        }
+
+        document.getElementById('weekly-total').innerText = formatNumber(totalWeeklyAccumulation);
+
+        let targetDayVal = targetDayScores[currentDay];
+        let dayDeltaDisplay = document.getElementById('day-delta-display');
+        
+        let comparisonScore = actualDayScores[currentDay] > 0 ? actualDayScores[currentDay] : currentDayScore;
+
+        if(targetDayVal <= 0) {
+            dayDeltaDisplay.innerText = "No target set";
+            dayDeltaDisplay.className = "goal-delta status-neutral";
+        } else {
+            let dayDiff = comparisonScore - targetDayVal;
+            if(dayDiff >= 0) {
+                dayDeltaDisplay.innerText = "Goal Met! (+" + formatNumber(dayDiff) + ")";
+                dayDeltaDisplay.className = "goal-delta status-hit";
+            } else {
+                dayDeltaDisplay.innerText = formatNumber(Math.abs(dayDiff)) + " pts remaining";
+                dayDeltaDisplay.className = "goal-delta status-miss";
+            }
+        }
+
+        let targetWeekVal = val('target-week');
+        let weekDeltaDisplay = document.getElementById('week-delta-display');
+        if(targetWeekVal <= 0) {
+            weekDeltaDisplay.innerText = "No target set";
+            weekDeltaDisplay.className = "goal-delta status-neutral";
+        } else {
+            let weekDiff = totalWeeklyAccumulation - targetWeekVal;
+            if(weekDiff >= 0) {
+                weekDeltaDisplay.innerText = "Milestone Met! (+" + formatNumber(weekDiff) + ")";
+                weekDeltaDisplay.className = "goal-delta status-hit";
+            } else {
+                weekDeltaDisplay.innerText = formatNumber(Math.abs(weekDiff)) + " pts remaining";
+                weekDeltaDisplay.className = "goal-delta status-miss";
+            }
+        }
+
+        saveState(); 
+    }
+
+    // UPDATED SAVE FUNCTION TO CAPTURE GOAL
+    function saveCurrentWeek() {
+        let currentWeeklyScoreStr = document.getElementById('weekly-total').innerText;
+        let currentWeeklyScore = parseInt(currentWeeklyScoreStr.replace(/,/g, ''));
+        let targetWeeklyScore = val('target-week');
+
+        if (currentWeeklyScore === 0) return alert("Enter some points before saving!");
+
+        let history = JSON.parse(localStorage.getItem('vs_calc_history')) || [];
+        let newRecord = {
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            score: currentWeeklyScore,
+            goal: targetWeeklyScore
+        };
+
+        history.unshift(newRecord);
+        localStorage.setItem('vs_calc_history', JSON.stringify(history));
+        loadHistoryDisplay();
+        alert("Week saved safely to browser cache!");
+    }
+
+    function loadHistoryDisplay() {
+        let history = JSON.parse(localStorage.getItem('vs_calc_history')) || [];
+        let container = document.getElementById('history-container');
+        let chartWrapper = document.getElementById('chart-wrapper');
+        
+        container.innerHTML = "";
+
+        if (history.length === 0) {
+            chartWrapper.classList.remove('visible');
+            container.innerHTML = `<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:10px;">No saved history found. Tap Save Week to begin!</div>`;
+            return;
+        }
+
+        // Render Graph
+        chartWrapper.classList.add('visible');
+        renderChart(history);
+
+        // Render Text List
+        history.forEach(item => {
+            let div = document.createElement('div');
+            div.className = "history-item";
+            
+            let goalText = item.goal > 0 ? ` (Goal: ${formatNumber(item.goal)})` : "";
+            
+            div.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:3px;">
+                    <span class="history-date">📅 ${item.date}</span>
+                    <span class="history-goal">${goalText}</span>
+                </div>
+                <span class="history-score">${formatNumber(item.score)} pts</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // NEW CHART RENDERING FUNCTION
+    function renderChart(history) {
+        let ctx = document.getElementById('historyChart').getContext('2d');
+        
+        // Reverse array so the graph reads chronologically (left to right)
+        let chartData = [...history].reverse();
+        
+        let labels = chartData.map(item => item.date.replace(/, \d{4}/, '')); // Strip year for cleaner labels
+        let actualData = chartData.map(item => item.score);
+        let goalData = chartData.map(item => item.goal);
+
+        if (vsChart) {
+            vsChart.destroy(); // Clear old chart before drawing new one
+        }
+
+        vsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Actual Score',
+                        data: actualData,
+                        borderColor: '#10b981', // green
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#10b981'
+                    },
+                    {
+                        label: 'Target Goal',
+                        data: goalData,
+                        borderColor: '#f97316', // orange
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointBackgroundColor: '#f97316'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                color: '#9ca3af',
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#374151' },
+                        ticks: { 
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                                return value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f3f4f6', boxWidth: 12 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatNumber(context.parsed.y);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function clearHistory() {
+        if (confirm("Are you sure you want to permanently delete all saved history?")) {
+            localStorage.removeItem('vs_calc_history');
+            loadHistoryDisplay();
+        }
+    }
+
+    window.onload = function() {
+        loadState(); 
+        
+        document.querySelectorAll('.input-group input').forEach(input => {
+            input.addEventListener('change', runAllCalculations);
+            input.addEventListener('keyup', runAllCalculations);
+        });
+        
+        setDay(1); 
+        loadHistoryDisplay();
+    };
+</script>
+</body>
+</html>
